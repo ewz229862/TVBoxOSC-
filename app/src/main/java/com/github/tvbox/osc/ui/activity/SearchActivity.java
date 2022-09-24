@@ -205,30 +205,16 @@ public class SearchActivity extends BaseActivity {
     /**
      * 拼音联想
      */
-    private void loadRec(String key) {
-        OkGo.<String>get("https://s.video.qq.com/smartbox")
-                .params("plat", 2)
-                .params("ver", 0)
-                .params("num", 10)
-                .params("otype", "json")
-                .params("query", key)
-                .execute(new AbsCallback<String>() {
-                    @Override
-                    public void onSuccess(Response<String> response) {
-                        try {
-                            ArrayList<String> hots = new ArrayList<>();
-                            String result = response.body();
-                            JsonObject json = JsonParser.parseString(result.substring(result.indexOf("{"), result.lastIndexOf("}") + 1)).getAsJsonObject();
-                            JsonArray itemList = json.get("item").getAsJsonArray();
-                            for (JsonElement ele : itemList) {
-                                JsonObject obj = (JsonObject) ele;
-                                hots.add(obj.get("word").getAsString().trim());
-                            }
-                            wordAdapter.setNewData(hots);
-                        } catch (Throwable th) {
-                            th.printStackTrace();
-                        }
-                    }
+    private void getSuggest(String text) {
+        mBinding.hint.setText(R.string.search_suggest);
+        OKHttp.newCall("https://suggest.video.iqiyi.com/?if=mobile&key=" + text).enqueue(new Callback() {
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                List<String> items = Suggest.get(response.body().string());
+                mHandler.post(() -> mWordAdapter.addAll(items));
+            }
+        });
+    }
 
                     @Override
                     public String convertResponse(okhttp3.Response response) throws Throwable {
